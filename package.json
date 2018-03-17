@@ -1,0 +1,22 @@
+{
+  "name": "wastebot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phchabrol/wastebot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/phchabrol/wastebot/issues"
+  },
+  "homepage": "https://github.com/phchabrol/wastebot#readme",
+  "dependencies": {
+    "botbuilder": "^3.14.0"
+  }
+}

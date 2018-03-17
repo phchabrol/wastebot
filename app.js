@@ -18,7 +18,20 @@ var connector = new builder.ChatConnector({
 // Listen for messages from users 
 server.post('/api/messages', connector.listen());
 
+var inMemoryStorage = new builder.MemoryBotStorage();
+
+
 // Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')
-var bot = new builder.UniversalBot(connector, function (session) {
-    session.send("You said: %s", session.message.text);
-});
+var bot = new builder.UniversalBot(connector, [
+    function (session) {
+        session.beginDialog('greetings', session.userData.profile);
+    }
+]).set('storage', inMemoryStorage);
+
+bot.dialog('greetings', [
+    function (session) {
+        session.send("Hi! Hope you're doing well today. My goal is to help you reduce your waste at home.");
+        session.send("To do so, each time you take out the trash, please take a picture of it. I'll estimate its volume and weight and then add it to your total waste.:wastebasket:");
+        session.send("Let's start now! Please take a picture of your trash bag :point_down:");
+    }
+]);

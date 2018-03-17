@@ -16,7 +16,7 @@ var connector = new builder.ChatConnector({
 });
 
 // Listen for messages from users 
-server.post('https://hidden-tundra-44872.herokuapp.com/api/messages', connector.listen());
+server.post('/api/messages', connector.listen());
 
 var inMemoryStorage = new builder.MemoryBotStorage();
 

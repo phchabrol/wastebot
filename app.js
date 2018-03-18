@@ -20,33 +20,25 @@ server.post('/api/messages', connector.listen());
 
 var inMemoryStorage = new builder.MemoryBotStorage();
 
-
-// Receive messages from the user and respond by echoing each message back (prefixed with 'You said:')
+// This is a dinner reservation bot that uses a waterfall technique to prompt users for input.
 var bot = new builder.UniversalBot(connector, [
     function (session) {
-        session.beginDialog('greetings');
+        session.send("Welcome to the dinner reservation.");
+        builder.Prompts.time(session, "Please provide a reservation date and time (e.g.: June 6th at 5pm)");
     },
     function (session, results) {
-        session.beginDialog('askname');
+        session.dialogData.reservationDate = builder.EntityRecognizer.resolveTime([results.response]);
+        builder.Prompts.text(session, "How many people are in your party?");
+    },
+    function (session, results) {
+        session.dialogData.partySize = results.response;
+        builder.Prompts.text(session, "Whose name will this reservation be under?");
+    },
+    function (session, results) {
+        session.dialogData.reservationName = results.response;
+
+        // Process request and display reservation details
+        session.send(`Reservation confirmed. Reservation details: <br/>Date/Time: ${session.dialogData.reservationDate} <br/>Party size: ${session.dialogData.partySize} <br/>Reservation name: ${session.dialogData.reservationName}`);
         session.endDialog();
     }
-]).set('storage', inMemoryStorage);
-
-bot.dialog('greetings', [
-    function (session) {
-        session.send("Hi! Hope you're doing well today. My goal is to help you reduce your waste at home.");
-        session.send("To do so, each time you take out the trash, please take a picture of it. I'll estimate its volume and weight and then add it to your total waste.:wastebasket:");
-    },
-    function (session, results) {
-        session.endDialog("Let's start now! Please take a picture of your trash bag :point_down:");
-    }
-]);
-
-bot.dialog('askname', [
-    function (session) {
-        builder.Prompts.text(session,"What is your name?");
-    },
-    function (session, results) {
-        session.endDialogWithResult("Hello ${results.response}!");
-    }
-]);
+]).set('storage', inMemoryStorage); // Register in-memory storage 

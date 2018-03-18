@@ -25,6 +25,9 @@ var inMemoryStorage = new builder.MemoryBotStorage();
 var bot = new builder.UniversalBot(connector, [
     function (session) {
         session.beginDialog('greetings');
+    },
+    function (session) {
+        session.beginDialog('askname');
     }
 ]).set('storage', inMemoryStorage);
 
@@ -32,6 +35,17 @@ bot.dialog('greetings', [
     function (session) {
         session.send("Hi! Hope you're doing well today. My goal is to help you reduce your waste at home.");
         session.send("To do so, each time you take out the trash, please take a picture of it. I'll estimate its volume and weight and then add it to your total waste.:wastebasket:");
-        session.send("Let's start now! Please take a picture of your trash bag :point_down:");
+    },
+    function (session, results) {
+        session.endDialog("Let's start now! Please take a picture of your trash bag :point_down:");
+    }
+]);
+
+bot.dialog('askname', [
+    function (session) {
+        builder.Prompts.text(session,"What is your name?");
+    },
+    function (session, results) {
+        session.endDialog("Hello ${results.response}!");
     }
 ]);

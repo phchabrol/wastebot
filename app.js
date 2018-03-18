@@ -26,8 +26,9 @@ var bot = new builder.UniversalBot(connector, [
     function (session) {
         session.beginDialog('greetings');
     },
-    function (session) {
+    function (session, results) {
         session.beginDialog('askname');
+        session.endDialog();
     }
 ]).set('storage', inMemoryStorage);
 
@@ -46,6 +47,6 @@ bot.dialog('askname', [
         builder.Prompts.text(session,"What is your name?");
     },
     function (session, results) {
-        session.endDialog("Hello ${results.response}!");
+        session.endDialogWithResult("Hello ${results.response}!");
     }
 ]);

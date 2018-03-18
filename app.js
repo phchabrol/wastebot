@@ -1,6 +1,7 @@
 var restify = require('restify');
 var builder = require('botbuilder');
 var needle = require('needle');
+var imageAnalysis = require('./imageanalysis');
 
 require('dotenv').config();
 
@@ -34,6 +35,10 @@ var bot = new builder.UniversalBot(connector, [
         if (hasImageAttachment(session)) {
             var stream = getImageStreamFromMessage(session.message);
             session.send("got the image in the attachment");
+            imageAnalysis
+            .getCaptionFromStream(stream)
+            .then(function (caption) { handleSuccessResponse(session, caption); })
+            .catch(function (error) { handleErrorResponse(session, error); });
           } else {
             var imageUrl = parseAnchorTag(session.message.text) || (validUrl.isUri(session.message.text) ? session.message.text : null);
             if (imageUrl) {
@@ -112,4 +117,27 @@ function parseAnchorTag(input) {
     }
 
     return null;
+}
+
+//=========================================================
+// Response Handling
+//=========================================================
+function handleSuccessResponse(session, caption) {
+    if (caption) {
+        session.send('I think it\'s ' + caption);
+    }
+    else {
+        session.send('Couldn\'t find a caption for this one');
+    }
+
+}
+
+function handleErrorResponse(session, error) {
+    var clientErrorMessage = 'Oops! Something went wrong. Try again later.';
+    if (error.message && error.message.indexOf('Access denied') > -1) {
+        clientErrorMessage += "\n" + error.message;
+    }
+
+    console.error(error);
+    session.send(clientErrorMessage);
 }

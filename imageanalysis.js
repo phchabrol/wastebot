@@ -72,12 +72,16 @@ exports.getCaptionFromUrl = function (url) {
 
 /**
  * Extracts the caption description from the response of the Vision API
- * @param {Object} body Response of the Vision API
+ * @param {Object} body Response of the Custom Vision API
  * @return {string} Description if caption found, null otherwise.
  */
 function extractCaption(body) {
-    if (body && body.description && body.description.captions && body.description.captions.length) {
-        return body.description.captions[0].text;
+    console.log(body);
+    if (body) {
+        console.log("I'm analyzing the body");
+        var analysis = body["Predictions"][0]["Tag"];
+        console.log(analysis);
+        return analysis;
     }
 
     return null;

@@ -23,13 +23,30 @@ var inMemoryStorage = new builder.MemoryBotStorage();
 // This is a dinner reservation bot that uses a waterfall technique to prompt users for input.
 var bot = new builder.UniversalBot(connector, [
     function (session) {
-        session.send("Welcome to the reduce waste bot.");
-        builder.Prompts.text(session, "First tell me your name");
+        session.beginDialog('greetings', session.userData.name);
     },
     function (session, results) {
         session.dialogData.name = results.response;
         // Process request and display reservation details
-        session.send(`Understood,  ${session.dialogData.name}, let's get started!`);
+        session.send(`Well, ${session.dialogData.name}, let's get started!`);
         session.endDialog();
     }
 ]).set('storage', inMemoryStorage); // Register in-memory storage 
+
+
+bot.dialog('greetings', [
+    function (session) {
+        session.beginDialog('askName');
+    },
+    function (session, results) {
+        session.endDialog('Hello %s!', results.response);
+    }
+]);
+bot.dialog('askName', [
+    function (session) {
+        builder.Prompts.text(session, 'Hi! What is your name?');
+    },
+    function (session, results) {
+        session.endDialogWithResult(results);
+    }
+]);

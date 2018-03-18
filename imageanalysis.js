@@ -11,7 +11,7 @@ var request = require('request').defaults({ encoding: null });
  * @return {Promise} Promise with caption string if succeeded, error otherwise
  */
 exports.getCaptionFromStream = function (stream) {
-    var apiUrl = process.env.MICROSOFT_VISION_API_ENDPOINT + '/analyze?visualFeatures=Description'
+    var apiUrl = process.env.MICROSOFT_CUSTOM_VISION_API_ENDPOINT;
     return new Promise(
         function (resolve, reject) {
             var requestData = {
@@ -19,7 +19,7 @@ exports.getCaptionFromStream = function (stream) {
                 encoding: 'binary',
                 json: true,
                 headers: {
-                    'Ocp-Apim-Subscription-Key': process.env.MICROSOFT_VISION_API_KEY,
+                    'Prediction-Key': process.env.MICROSOFT_CUSTOM_VISION_API_KEY,
                     'content-type': 'application/octet-stream'
                 }
             };
@@ -43,14 +43,14 @@ exports.getCaptionFromStream = function (stream) {
  * @return {Promise} Promise with caption string if succeeded, error otherwise
  */
 exports.getCaptionFromUrl = function (url) {
-    var apiUrl = process.env.MICROSOFT_VISION_API_ENDPOINT + '/analyze?visualFeatures=Description'
+    var apiUrl = process.env.MICROSOFT_CUSTOM_VISION_API_ENDPOINT
     return new Promise(
         function (resolve, reject) {
             var requestData = {
                 url: apiUrl,
                 json: { 'url': url },
                 headers: {
-                    'Ocp-Apim-Subscription-Key': process.env.MICROSOFT_VISION_API_KEY,
+                    'Prediction-Key': process.env.MICROSOFT_CUSTOM_VISION_API_KEY,
                     'content-type': 'application/json'
                 }
             };

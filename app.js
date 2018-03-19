@@ -22,7 +22,7 @@ server.post('/api/messages', connector.listen());
 
 var inMemoryStorage = new builder.MemoryBotStorage();
 
-// This is a dinner reservation bot that uses a waterfall technique to prompt users for input.
+// Start the dialog design to 
 var bot = new builder.UniversalBot(connector, [
     function (session) {
         session.beginDialog('greetings', session.dialogData.name);

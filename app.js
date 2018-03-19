@@ -28,7 +28,7 @@ var bot = new builder.UniversalBot(connector, [
         session.beginDialog('greetings', session.dialogData.name);
     },
     function (session,results) {
-        builder.Prompts.attachment(session, `Well, let's get started, please send me a picture of your trash`);
+        builder.Prompts.attachment(session, `Please send me a picture of your trash`);
     },
     function (session,results) {
         console.log('attachement requested');
@@ -53,11 +53,7 @@ var bot = new builder.UniversalBot(connector, [
 
 bot.dialog('greetings', [
     function (session) {
-        builder.Prompts.text(session, 'Hi! What is your name?');
-    },
-    function (session, results) {
-        session.userData.name = results.response;
-        session.endDialog('Hello %s!', results.response);
+        session.endDialog('Hello, welcome here, friend :thumbsup:! I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
 ]);
 
@@ -122,12 +118,13 @@ function parseAnchorTag(input) {
 // Response Handling
 //=========================================================
 function handleSuccessResponse(session, caption) {
-    if (caption) {
-        console.log(caption);
-        session.send('I think it\'s ' + caption);
+    if (caption["flagTrash"]=="Yes") {
+        var display ="";
+        display=" "+caption["volume"]+" bag of "+caption["trashType"]+" trash";
+        session.send('I think it\'s a' + display);
     }
     else {
-        session.send('Couldn\'t find a caption for this one');
+        session.send('I don\'t think this is trash');
     }
 
 }

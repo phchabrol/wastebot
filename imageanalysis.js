@@ -76,6 +76,7 @@ exports.getCaptionFromUrl = function (url) {
  * @return {string} Description if caption found, null otherwise.
  */
 function extractCaption(body) {
+    console.log("start extract caption");
     console.log(body);
     if (body) {
         var analysis = {
@@ -83,15 +84,14 @@ function extractCaption(body) {
             "trashType":"",
             "volume":""
         };
-        var data = JSON.parse(body);
-        console.log("I'm analyzing the body");
         
-        for(i=0; i<data.Predictions.length;i++){
-            if(data.Predictions[i].Probability>0.90){
-                if(data.Predictions[i].Tag=="trash"){analysis.flagTrash="Yes"};
-                if(data.Predictions[i].Tag=="recycable"){analysis.flagTrash="recycable"}; 
-                if(data.Predictions[i].Tag=="household"){analysis.flagTrash="household"}; 
-                if(data.Predictions[i].Tag=="50L"){analysis.volume="50L"};   
+        for(i=0; i<body.Predictions.length;i++){
+            if(body.Predictions[i].Probability>0.90){
+                if(body.Predictions[i].Tag=="trash"){analysis.flagTrash="Yes"};
+                if(body.Predictions[i].Tag=="recyclable"){analysis.trashType="recyclable"}; 
+                if(body.Predictions[i].Tag=="household"){analysis.trashType="household"}; 
+                if(body.Predictions[i].Tag=="50L"){analysis.volume="50L"};
+                if(body.Predictions[i].Tag=="380L"){analysis.volume="380L"};     
             };
         }
         console.log(analysis);

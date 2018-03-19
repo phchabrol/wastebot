@@ -53,7 +53,7 @@ var bot = new builder.UniversalBot(connector, [
 
 bot.dialog('greetings', [
     function (session) {
-        session.endDialog('Hello, welcome here'+session.message.From.Name+', :thumbsup:! I\'ll analyse your pictures of trash. Now, let\'s get started!');
+        session.endDialog('Hello, welcome here, :hi:! I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
 ]);
 

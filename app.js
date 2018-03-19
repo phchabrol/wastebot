@@ -34,7 +34,6 @@ var bot = new builder.UniversalBot(connector, [
         console.log('attachement requested');
         if (hasImageAttachment(session)) {
             var stream = getImageStreamFromMessage(session.message);
-            session.send("got the image in the attachment");
             imageAnalysis
             .getCaptionFromStream(stream)
             .then(function (caption) { handleSuccessResponse(session, caption); })
@@ -124,6 +123,7 @@ function parseAnchorTag(input) {
 //=========================================================
 function handleSuccessResponse(session, caption) {
     if (caption) {
+        console.log(caption);
         session.send('I think it\'s ' + caption);
     }
     else {

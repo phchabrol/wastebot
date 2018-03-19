@@ -78,11 +78,24 @@ exports.getCaptionFromUrl = function (url) {
 function extractCaption(body) {
     console.log(body);
     if (body) {
+        var analysis = {
+            "flagTrash":"",
+            "trashType":"",
+            "volume":""
+        };
+        var data = JSON.parse(body);
         console.log("I'm analyzing the body");
-        var analysis = body["Predictions"][0]["Tag"];
+        
+        for(i=0; i<data.Predictions.length;i++){
+            if(data.Predictions[i].Probability>0.90){
+                if(data.Predictions[i].Tag=="trash"){analysis.flagTrash="Yes"};
+                if(data.Predictions[i].Tag=="recycable"){analysis.flagTrash="recycable"}; 
+                if(data.Predictions[i].Tag=="household"){analysis.flagTrash="household"}; 
+                if(data.Predictions[i].Tag=="50L"){analysis.volume="50L"};   
+            };
+        }
         console.log(analysis);
         return analysis;
     }
-
     return null;
 }

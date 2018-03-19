@@ -26,6 +26,7 @@ var inMemoryStorage = new builder.MemoryBotStorage();
 var bot = new builder.UniversalBot(connector, [
     function (session) {
         session.beginDialog('greetings', session.dialogData.name);
+        
     },
     function (session,results) {
         builder.Prompts.attachment(session, `Please send me a picture of your trash`);
@@ -121,7 +122,10 @@ function handleSuccessResponse(session, caption) {
     if (caption["flagTrash"]=="Yes") {
         var display ="";
         display=" "+caption["volume"]+" bag of "+caption["trashType"]+" trash";
-        session.send('I think it\'s a' + display);
+        session.sendTyping();
+        setTimeout(function () {
+            session.send('I think it\'s a' + display);
+        }, 3000); 
     }
     else {
         session.send('I don\'t think this is trash');

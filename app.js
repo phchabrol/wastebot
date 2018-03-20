@@ -2,7 +2,6 @@ var restify = require('restify');
 var builder = require('botbuilder');
 var needle = require('needle');
 var imageAnalysis = require('./imageanalysis');
-
 require('dotenv').config();
 
 // Setup Restify Server
@@ -50,7 +49,6 @@ var bot = new builder.UniversalBot(connector, [
     }
 
 ]).set('storage', inMemoryStorage); // Register in-memory storage 
-
 
 bot.dialog('greetings', [
     function (session) {

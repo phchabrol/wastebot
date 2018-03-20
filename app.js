@@ -2,7 +2,21 @@ var restify = require('restify');
 var builder = require('botbuilder');
 var needle = require('needle');
 var imageAnalysis = require('./imageanalysis');
+var azure = require('botbuilder-azure'); 
+
 require('dotenv').config();
+
+//set up cosmos DB connector
+var documentDbOptions = {
+    host: process.env.DOCUMENTDB_URI, 
+    masterKey: process.env.DOCUMENTDB_KEY, 
+    database: 'botdoc',   
+    collection: 'botdata'
+};
+
+var docDbClient = new azure.DocumentDbClient(documentDbOptions);
+
+var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -48,7 +62,7 @@ var bot = new builder.UniversalBot(connector, [
         }
     }
 
-]).set('storage', inMemoryStorage); // Register in-memory storage 
+]).set('storage', cosmosStorage); // Register Cosmos DB storage
 
 bot.dialog('greetings', [
     function (session) {
@@ -119,6 +133,9 @@ function parseAnchorTag(input) {
 function handleSuccessResponse(session, caption) {
     if (caption["flagTrash"]=="Yes") {
         var display ="";
+        session.userData.volume = caption["volume"];
+        session.userData.trashtype = caption["trashType"];
+        session.save();
         display=" "+caption["volume"]+" bag of "+caption["trashType"]+" trash";
         session.sendTyping();
         setTimeout(function () {

@@ -35,10 +35,16 @@ server.post('/api/messages', connector.listen());
 
 var inMemoryStorage = new builder.MemoryBotStorage();
 
+var volume = [];
+var trashtype = [];
+
 // Start the dialog design to 
 var bot = new builder.UniversalBot(connector, [
+
+
     function (session) {
         session.beginDialog('greetings', session.dialogData.name);
+
         
     },
     function (session,results) {
@@ -52,6 +58,9 @@ var bot = new builder.UniversalBot(connector, [
             .getCaptionFromStream(stream)
             .then(function (caption) { handleSuccessResponse(session, caption); })
             .catch(function (error) { handleErrorResponse(session, error); });
+
+            session.save();
+
           } else {
             var imageUrl = parseAnchorTag(session.message.text) || (validUrl.isUri(session.message.text) ? session.message.text : null);
             if (imageUrl) {
@@ -133,11 +142,13 @@ function parseAnchorTag(input) {
 function handleSuccessResponse(session, caption) {
     if (caption["flagTrash"]=="Yes") {
         var display ="";
-        session.userData.volume = caption["volume"];
-        session.userData.trashtype = caption["trashType"];
-        session.save();
         display=" "+caption["volume"]+" bag of "+caption["trashType"]+" trash";
+        volume.push(caption["volume"]);
+        trashtype.push(caption["trashType"]);
+        session.userData.volume = volume;
+        session.userData.trashtype = trashtype;
         session.sendTyping();
+        
         setTimeout(function () {
             session.send('I think it\'s a' + display);
         }, 3000); 

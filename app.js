@@ -3,6 +3,7 @@ var builder = require('botbuilder');
 var needle = require('needle');
 var imageAnalysis = require('./imageanalysis');
 var azure = require('botbuilder-azure'); 
+var utilities = require('./utilities.js');
 
 require('dotenv').config();
 
@@ -35,8 +36,8 @@ server.post('/api/messages', connector.listen());
 
 var inMemoryStorage = new builder.MemoryBotStorage();
 
-var volume = [];
-var trashtype = [];
+var user_records = {"records":[]};
+
 
 // Start the dialog design to 
 var bot = new builder.UniversalBot(connector, [
@@ -140,23 +141,27 @@ function parseAnchorTag(input) {
 // Response Handling
 //=========================================================
 function handleSuccessResponse(session, caption) {
+    var record = 
+        {
+            "record_id": utilities.getUniqueID(),
+            "record_date": new Date(),
+            "trash":false,
+            "trash_type_detected" : caption["trashType"],
+            "trash_volume_detected" : caption["volume"],
+            "trash_analysis" : ""
+        };
     if (caption["flagTrash"]=="Yes") {
         var display ="";
         display=" "+caption["volume"]+" bag of "+caption["trashType"]+" trash";
-        volume.push(caption["volume"]);
-        trashtype.push(caption["trashType"]);
-        session.userData.volume = volume;
-        session.userData.trashtype = trashtype;
-        session.sendTyping();
-        
-        setTimeout(function () {
-            session.send('I think it\'s a' + display);
-        }, 3000); 
+        record.trash = true;
+        record.trash_analysis = display;
+        session.send('I think it\'s a' + display);
     }
     else {
         session.send('I don\'t think this is trash');
     }
-
+    user_records.records.push(record);
+    session.userData.user_records = user_records;
 }
 
 function handleErrorResponse(session, error) {

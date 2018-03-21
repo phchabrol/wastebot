@@ -1,7 +1,5 @@
-// The exported functions in this module makes a call to Microsoft Cognitive Service Computer Vision API and return caption
-// description if found. Note: you can do more advanced functionalities like checking
-// the confidence score of the caption. For more info checkout the API documentation:
-// https://www.microsoft.com/cognitive-services/en-us/Computer-Vision-API/documentation/AnalyzeImage
+// The exported functions in this module makes a call to Microsoft Custom Vision API and return caption
+// description if found.
 
 var request = require('request').defaults({ encoding: null });
 

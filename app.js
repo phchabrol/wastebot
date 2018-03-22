@@ -4,6 +4,9 @@ var needle = require('needle');
 var imageAnalysis = require('./imageanalysis');
 var azure = require('botbuilder-azure'); 
 var utilities = require('./utilities.js');
+var mongoose = require('mongoose');
+var User = require('./models/user');
+var TrashRecord = require('./models/record');
 
 require('dotenv').config();
 
@@ -18,6 +21,14 @@ var documentDbOptions = {
 var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
 var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
+
+//Set up mongoose connection
+
+var mongoDB = process.env.MONGODB_URI;
+mongoose.connect(mongoDB);
+mongoose.Promise = global.Promise;
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -39,19 +50,19 @@ var inMemoryStorage = new builder.MemoryBotStorage();
 var user_records = {"records":[]};
 
 
-// Start the dialog design to 
+// Start the dialog design 
 var bot = new builder.UniversalBot(connector, [
     function (session) {
 
         session.beginDialog('greetings', session.dialogData.name);
 
-        
     },
     function (session,results) {
         builder.Prompts.attachment(session, `Please send me a picture of your trash`);
     },
     function (session,results) {
-        console.log('attachement requested');
+
+
         if (hasImageAttachment(session)) {
             var stream = getImageStreamFromMessage(session.message);
             imageAnalysis
@@ -79,6 +90,7 @@ bot.dialog('greetings', [
             "user_id": session.message.address.user.id,
             "user_name": session.message.address.user.name
         };
+
         session.endDialog('Hello, welcome here, '+user_details.user_name+'. I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
 ]);
@@ -128,6 +140,27 @@ function checkRequiresToken(message) {
 // Response Handling
 //=========================================================
 function handleSuccessResponse(session, caption) {
+
+    // code to create and save the users and their records
+    var user = new User({ 
+        user_name: session.message.address.user.name,
+        date_of_creation: new Date()
+    });
+    user.save(function (err) {
+        if (err) return handleErrorResponse(err);
+        var record = new TrashRecord(
+            {
+            record_date: new Date(),
+            user: user._id,
+            trash_detected: caption["flagTrash"],
+            trash_type_detected: caption["trashType"],
+            volume_detected: caption["volume"]
+            }
+        );
+        record.save(function (err) {
+            if (err) return handleErrorResponse(session, err);
+        });
+    });   
     var record = 
         {
             "record_id": utilities.getUniqueID(),
@@ -149,6 +182,7 @@ function handleSuccessResponse(session, caption) {
     }
     user_records.records.push(record);
     session.userData.user_records = user_records;
+    session.userData.numberTrashRecords = user.find;
 }
 
 function handleErrorResponse(session, error) {

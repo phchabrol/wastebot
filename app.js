@@ -41,8 +41,6 @@ var user_records = {"records":[]};
 
 // Start the dialog design to 
 var bot = new builder.UniversalBot(connector, [
-
-
     function (session) {
         session.beginDialog('greetings', session.dialogData.name);
 
@@ -76,7 +74,8 @@ var bot = new builder.UniversalBot(connector, [
 
 bot.dialog('greetings', [
     function (session) {
-        session.endDialog('Hello, welcome here, :hi:! I\'ll analyse your pictures of trash. Now, let\'s get started!');
+        var userName = session.message.address.user.id;
+        session.endDialog('Hello, welcome here,'+userName+' .I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
 ]);
 
@@ -121,22 +120,6 @@ function getImageStreamFromMessage(message) {
 function checkRequiresToken(message) {
     return message.source === 'skype' || message.source === 'msteams';
 }
-
-/**
- * Gets the href value in an anchor element.
- * Skype transforms raw urls to html. Here we extract the href value from the url
- * @param {string} input Anchor Tag
- * @return {string} Url matched or null
- */
-function parseAnchorTag(input) {
-    var match = input.match('^<a href=\"([^\"]*)\">[^<]*</a>$');
-    if (match && match[1]) {
-        return match[1];
-    }
-
-    return null;
-}
-
 //=========================================================
 // Response Handling
 //=========================================================

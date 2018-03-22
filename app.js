@@ -39,9 +39,6 @@ var inMemoryStorage = new builder.MemoryBotStorage();
 var user_records = {"records":[]};
 
 
-    
-
-
 // Start the dialog design to 
 var bot = new builder.UniversalBot(connector, [
     function (session) {
@@ -82,7 +79,7 @@ bot.dialog('greetings', [
             "user_id": session.message.address.user.id,
             "user_name": session.message.address.user.name
         };
-        session.endDialog('Hello, welcome here,'+user_details.user_name+'. I\'ll analyse your pictures of trash. Now, let\'s get started!');
+        session.endDialog('Hello, welcome here, '+user_details.user_name+'. I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
 ]);
 

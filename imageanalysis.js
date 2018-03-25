@@ -74,8 +74,6 @@ exports.getCaptionFromUrl = function (url) {
  * @return {string} Description if caption found, null otherwise.
  */
 function extractCaption(body) {
-    console.log("start extract caption");
-    console.log(body);
     if (body) {
         var analysis = {
             "flagTrash":"",
@@ -92,7 +90,6 @@ function extractCaption(body) {
                 if(body.Predictions[i].Tag=="380L"){analysis.volume="380L"};     
             };
         }
-        console.log(analysis);
         return analysis;
     }
     return null;

@@ -22,14 +22,6 @@ var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
 var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
 
-//Set up mongoose connection
-
-var mongoDB = process.env.MONGODB_URI;
-mongoose.connect(mongoDB);
-mongoose.Promise = global.Promise;
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-
 // Setup Restify Server
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
@@ -53,35 +45,14 @@ var user_records = {"records":[]};
 // Start the dialog design 
 var bot = new builder.UniversalBot(connector, [
     function (session) {
-
         session.beginDialog('greetings', session.dialogData.name);
-
     },
     function (session,results) {
         builder.Prompts.attachment(session, `Please send me a picture of your trash`);
     },
-    function (session,results) {
-
-
-        if (hasImageAttachment(session)) {
-            var stream = getImageStreamFromMessage(session.message);
-            imageAnalysis
-            .getCaptionFromStream(stream)
-            .then(function (caption) { handleSuccessResponse(session, caption); })
-            .catch(function (error) { handleErrorResponse(session, error); });
-
-            session.save();
-
-          } else {
-            var imageUrl = parseAnchorTag(session.message.text) || (validUrl.isUri(session.message.text) ? session.message.text : null);
-            if (imageUrl) {
-                session.send("got the image in the URL");
-              } else {
-                session.send('Did you upload an image? I\'m more of a visual person. Try sending me an image or an image URL');
-            }
-        }
+    function (session,results,next) {
+        session.beginDialog('imageanalysis', session);
     }
-
 ]).set('storage', cosmosStorage); // Register Cosmos DB storage
 
 bot.dialog('greetings', [
@@ -90,9 +61,35 @@ bot.dialog('greetings', [
             "user_id": session.message.address.user.id,
             "user_name": session.message.address.user.name
         };
-
-        session.endDialog('Hello, welcome here, '+user_details.user_name+'. I\'ll analyse your pictures of trash. Now, let\'s get started!');
+        session.endDialog('I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
+]);
+
+bot.dialog('imageanalysis', [
+    function (session, args) {
+        if(hasImageAttachment(session) && args.reprompt) {
+            var stream = getImageStreamFromMessage(session.message);
+            imageAnalysis
+            .getCaptionFromStream(stream)
+            .then(function (caption) { 
+                session.send(handleSuccessResponse(session, caption));
+            })
+            .catch(function (error) { 
+                session.send(handleErrorResponse(session, error)); 
+            });
+        }
+        builder.Prompts.choice(session, "Do you want to upload a new picture?", "Yes|No",{ listStyle: 3 });
+    },
+    function (session, results){
+        if(results.response.entity=="Yes"){
+            session.send('Ok let\'s upload a new picture');
+            session.replaceDialog("imageanalysis", { reprompt: true }); 
+
+        } else{
+            session.endDialog('Alright then, please come back anytime. I\'ll be here. Waiting for you.');
+        }
+    }
+
 ]);
 
 bot.dialog('help', function (session, args, next) {
@@ -103,13 +100,13 @@ bot.dialog('help', function (session, args, next) {
     onSelectAction: (session, args, next) => {
         // Add the help dialog to the dialog stack 
         // (override the default behavior of replacing the stack)
-        session.beginDialog(args.action, args);
+        session.beginDialog(args.twi, args);
     }
 });
 
+
 function hasImageAttachment(session) {
-    console.log("check attachment");
-    return session.message.attachments.length > 0 &&
+     return session.message.attachments.length > 0 &&
         session.message.attachments[0].contentType.indexOf('image') !== -1;
 }
 
@@ -117,9 +114,6 @@ function getImageStreamFromMessage(message) {
     var headers = {};
     var attachment = message.attachments[0];
     if (checkRequiresToken(message)) {
-        // The Skype attachment URLs are secured by JwtToken,
-        // you should set the JwtToken of your bot as the authorization header for the GET request your bot initiates to fetch the image.
-        // https://github.com/Microsoft/BotBuilder/issues/662
         connector.getAccessToken(function (error, token) {
             var tok = token;
             headers['Authorization'] = 'Bearer ' + token;
@@ -140,57 +134,21 @@ function checkRequiresToken(message) {
 // Response Handling
 //=========================================================
 function handleSuccessResponse(session, caption) {
-
-    // code to create and save the users and their records
-    var user = new User({ 
-        user_name: session.message.address.user.name,
-        date_of_creation: new Date()
-    });
-    user.save(function (err) {
-        if (err) return handleErrorResponse(err);
-        var record = new TrashRecord(
-            {
-            record_date: new Date(),
-            user: user._id,
-            trash_detected: caption["flagTrash"],
-            trash_type_detected: caption["trashType"],
-            volume_detected: caption["volume"]
-            }
-        );
-        record.save(function (err) {
-            if (err) return handleErrorResponse(session, err);
-        });
-    });   
-    var record = 
-        {
-            "record_id": utilities.getUniqueID(),
-            "record_date": new Date(),
-            "trash":false,
-            "trash_type_detected" : caption["trashType"],
-            "trash_volume_detected" : caption["volume"],
-            "trash_analysis" : ""
-        };
+    var display ="";   
     if (caption["flagTrash"]=="Yes") {
-        var display ="";
-        display=" "+caption["volume"]+" bag of "+caption["trashType"]+" trash";
-        record.trash = true;
-        record.trash_analysis = display;
-        session.send('I think it\'s a' + display);
+        display = 'I think it\'s a '+caption["volume"]+" bag of "+caption["trashType"]+" trash";
     }
     else {
-        session.send('I don\'t think this is trash');
+        display = 'I don\'t think this is trash';
     }
-    user_records.records.push(record);
-    session.userData.user_records = user_records;
-    session.userData.numberTrashRecords = user.find;
+    return display;
 }
 
 function handleErrorResponse(session, error) {
     var clientErrorMessage = 'Oops! Something went wrong. Try again later.';
+
     if (error.message && error.message.indexOf('Access denied') > -1) {
         clientErrorMessage += "\n" + error.message;
     }
-
-    console.error(error);
-    session.send(clientErrorMessage);
+    return clientErrorMessage;
 }

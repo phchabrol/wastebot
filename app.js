@@ -22,6 +22,19 @@ var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
 var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
 
+// install mongoose DB
+//Set up default mongoose connection
+var mongoDB = process.env.MONGODB_URI;
+mongoose.connect(mongoDB);
+// Get Mongoose to use the global promise library
+mongoose.Promise = global.Promise;
+//Get the default connection
+var db = mongoose.connection;
+
+//Bind connection to error event (to get notification of connection errors)
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+
+
 // Setup Restify Server
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
@@ -89,9 +102,11 @@ bot.dialog('imageanalysis', [
 
         } else{
             session.endDialog('Alright then, please come back anytime. I\'ll be here. Waiting for you.');
+            saveUserData(session, function(results){
+                console.log(results);
+            });
         }
     }
-
 ]);
 
 bot.dialog('help', function (session, args, next) {
@@ -106,6 +121,16 @@ bot.dialog('help', function (session, args, next) {
     }
 });
 
+function saveUserData(session, callback){
+    User.create({ 
+        user_name: session.message.address.user.name,
+        date_of_creation: new Date()
+    }, function (err, awesome_instance) {
+        if (err) return handleErrorResponse(err);
+        // saved!
+      });
+      return callback("user creation done");
+}
 
 function hasImageAttachment(session) {
      return session.message.attachments.length > 0 &&

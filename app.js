@@ -67,18 +67,20 @@ bot.dialog('greetings', [
 
 bot.dialog('imageanalysis', [
     function (session, args) {
-        if(hasImageAttachment(session) && args.reprompt) {
+        if(hasImageAttachment(session)) {
             var stream = getImageStreamFromMessage(session.message);
             imageAnalysis
             .getCaptionFromStream(stream)
             .then(function (caption) { 
-                session.send(handleSuccessResponse(session, caption));
+                handleSuccessResponse(session, caption, function(results) {
+                    session.send(results)
+                    builder.Prompts.choice(session, "Do you want to upload a new picture?", "Yes|No",{ listStyle: 3 });
+                });
             })
             .catch(function (error) { 
                 session.send(handleErrorResponse(session, error)); 
             });
         }
-        builder.Prompts.choice(session, "Do you want to upload a new picture?", "Yes|No",{ listStyle: 3 });
     },
     function (session, results){
         if(results.response.entity=="Yes"){
@@ -133,7 +135,7 @@ function checkRequiresToken(message) {
 //=========================================================
 // Response Handling
 //=========================================================
-function handleSuccessResponse(session, caption) {
+function handleSuccessResponse(session, caption, callback) {
     var display ="";   
     if (caption["flagTrash"]=="Yes") {
         display = 'I think it\'s a '+caption["volume"]+" bag of "+caption["trashType"]+" trash";
@@ -141,7 +143,7 @@ function handleSuccessResponse(session, caption) {
     else {
         display = 'I don\'t think this is trash';
     }
-    return display;
+    return callback(display);
 }
 
 function handleErrorResponse(session, error) {

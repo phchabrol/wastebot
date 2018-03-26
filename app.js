@@ -52,13 +52,14 @@ server.post('/api/messages', connector.listen());
 
 var inMemoryStorage = new builder.MemoryBotStorage();
 
-var user_records = {"records":[]};
-
-
 // Start the dialog design 
 var bot = new builder.UniversalBot(connector, [
     function (session) {
         session.beginDialog('greetings', session.dialogData.name);
+        createUser(session, function(results){
+            session.userData.userId = results._id;
+            console.log(results._id);
+        });
     },
     function (session,results) {
         builder.Prompts.attachment(session, `Please send me a picture of your trash`);
@@ -70,10 +71,6 @@ var bot = new builder.UniversalBot(connector, [
 
 bot.dialog('greetings', [
     function (session) {
-        var user_details = {
-            "user_id": session.message.address.user.id,
-            "user_name": session.message.address.user.name
-        };
         session.endDialog('I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
 ]);
@@ -87,6 +84,10 @@ bot.dialog('imageanalysis', [
             .then(function (caption) { 
                 handleSuccessResponse(session, caption, function(results) {
                     session.send(results)
+                    session.userData.usercaption = caption;
+                    createTrashRecord(session,  session.userData, function(resultsRecord){
+                        console.log(resultsRecord);
+                    });
                     builder.Prompts.choice(session, "Do you want to upload a new picture?", "Yes|No",{ listStyle: 3 });
                 });
             })
@@ -99,12 +100,13 @@ bot.dialog('imageanalysis', [
         if(results.response.entity=="Yes"){
             session.send('Ok let\'s upload a new picture');
             session.replaceDialog("imageanalysis", { reprompt: true }); 
+        } else{           
+            checkCount(session, function(results){
+                session.send("You recordeded %s picture since you started to use me.", results);
+                session.endDialog('Please come back anytime. I\'ll be here. Waiting for you.');
 
-        } else{
-            session.endDialog('Alright then, please come back anytime. I\'ll be here. Waiting for you.');
-            saveUserData(session, function(results){
-                console.log(results);
-            });
+              });
+              
         }
     }
 ]);
@@ -121,15 +123,38 @@ bot.dialog('help', function (session, args, next) {
     }
 });
 
-function saveUserData(session, callback){
-    User.create({ 
-        user_name: session.message.address.user.name,
-        date_of_creation: new Date()
-    }, function (err, awesome_instance) {
-        if (err) return handleErrorResponse(err);
+function createTrashRecord(session, data, callback){
+    TrashRecord.create({ 
+        record_date: new Date(),
+        user: data.userId,
+        trash_detected: data.usercaption["flagTrash"],
+        trash_type_detected: data.usercaption["trashType"],
+        volume_detected:data.usercaption["volume"]
+    }, function (err) {
+        if (err) return handleErrorDB(err);
         // saved!
       });
-      return callback("user creation done");
+      return callback("records added");
+};
+
+function createUser(session, callback){
+    var user = new User({ 
+        user_name: session.message.address.user.name,
+        date_of_creation: new Date()
+    }, function (err) {
+        if (err) return handleErrorDB(err);
+        // saved!
+      });
+      return callback(user);
+}
+
+function checkCount(session, callback){
+    TrashRecord.count({
+        "user": session.userData.userId  
+    }, function(err, count){
+        if (err) return handleErrorDB(err);
+        return callback(count);
+    });
 }
 
 function hasImageAttachment(session) {
@@ -178,4 +203,11 @@ function handleErrorResponse(session, error) {
         clientErrorMessage += "\n" + error.message;
     }
     return clientErrorMessage;
+}
+
+//=========================================================
+// Error Handling
+//=========================================================
+function handleErrorDB(error) {
+    console.log(error);
 }

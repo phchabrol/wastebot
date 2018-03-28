@@ -73,7 +73,9 @@ bot.dialog('greetings', [
     function (session) {
         session.endDialog('I\'ll analyse your pictures of trash. Now, let\'s get started!');
     }
-]);
+]).reloadAction('startOver', 'Ok, starting over.', {
+    matches: /^restart$/i
+});;;
 
 bot.dialog('imageanalysis', [
     function (session, args) {
@@ -109,7 +111,9 @@ bot.dialog('imageanalysis', [
               
         }
     }
-]);
+]).reloadAction('startOver', 'Ok, starting over.', {
+    matches: /^restart$/i
+});;
 
 bot.dialog('help', function (session, args, next) {
     session.endDialog("This is a bot that can help you reduce your waste");

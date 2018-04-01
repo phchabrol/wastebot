@@ -39,12 +39,14 @@ server.post('/api/messages', connector.listen());
 
 var inMemoryStorage = new builder.MemoryBotStorage();
 
+var userId = "";
+
 // Start the dialog design 
 var bot = new builder.UniversalBot(connector, [
     function (session) {
         session.beginDialog('greetings', session.dialogData.name);
         createUser(session, function(results){
-            console.log("in user creation %s", results);
+            userId=results.id
         });
     },
     function (session,results) {
@@ -73,9 +75,7 @@ bot.dialog('imageanalysis', [
                 handleSuccessResponse(session, caption, function(results) {
                     session.send(results)
                     session.userData.usercaption = caption;
-                    console.log("session data: %s", session.userData.usercaption);
                     createTrashRecord(session, session.userData, function(resultsRecord){
-                        console.log(resultsRecord);
                     });
                     builder.Prompts.choice(session, "Do you want to upload a new picture?", "Yes|No",{ listStyle: 3 });
                 });
@@ -116,21 +116,18 @@ bot.dialog('help', function (session, args, next) {
 
 function createTrashRecord(session, data, callback){
     var apiUrl = process.env.WASTEDATA_API_ENDPOINT + "Records";
-    console.log("user ID, %s", data.userId);
     var record_data = JSON.stringify({
         record_date: new Date(),
         trash_detected: data.usercaption["flagTrash"],
         trash_type_detected: data.usercaption["trashType"],
-        volume_detected: 0,
-        userbotId: data.userId
+        volume_detected: data.usercaption["volume"],
+        userbotId: userId
     });
-    console.log(record_data);
     request.post({
         headers: {'content-type' : 'application/json'},
         url:apiUrl ,
         body: record_data  
         }, function(error, response, body){
-            console.log("after the call, %s",body);
         });   
       return callback("record added");
 };
@@ -146,12 +143,12 @@ function createUser(session, callback){
         url:apiUrl  ,
         body:  user_data  
         }, function(error, response, body){
-        console.log("body of the API request, %s",body);
-        session.userData.userId = body.id
+        var output = JSON.parse(body);
+        return callback(output);
         });
-
-    return callback(user_data);
 }
+
+  
 
 function checkCount(session, callback){
     return callback("wait for me to plug to the right stuff.");

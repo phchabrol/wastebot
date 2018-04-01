@@ -4,9 +4,9 @@ var needle = require('needle');
 var imageAnalysis = require('./imageanalysis');
 var azure = require('botbuilder-azure'); 
 var utilities = require('./utilities.js');
-var mongoose = require('mongoose');
-var User = require('./models/user');
-var TrashRecord = require('./models/record');
+var http = require('http');
+var request = require('request');
+
 
 require('dotenv').config();
 
@@ -21,19 +21,6 @@ var documentDbOptions = {
 var docDbClient = new azure.DocumentDbClient(documentDbOptions);
 
 var cosmosStorage = new azure.AzureBotStorage({ gzipData: false }, docDbClient);
-
-// install mongoose DB
-//Set up default mongoose connection
-var mongoDB = process.env.MONGODB_URI;
-mongoose.connect(mongoDB);
-// Get Mongoose to use the global promise library
-mongoose.Promise = global.Promise;
-//Get the default connection
-var db = mongoose.connection;
-
-//Bind connection to error event (to get notification of connection errors)
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-
 
 // Setup Restify Server
 var server = restify.createServer();
@@ -57,8 +44,7 @@ var bot = new builder.UniversalBot(connector, [
     function (session) {
         session.beginDialog('greetings', session.dialogData.name);
         createUser(session, function(results){
-            session.userData.userId = results._id;
-            console.log(results._id);
+            console.log("in user creation %s", results);
         });
     },
     function (session,results) {
@@ -87,7 +73,8 @@ bot.dialog('imageanalysis', [
                 handleSuccessResponse(session, caption, function(results) {
                     session.send(results)
                     session.userData.usercaption = caption;
-                    createTrashRecord(session,  session.userData, function(resultsRecord){
+                    console.log("session data: %s", session.userData.usercaption);
+                    createTrashRecord(session, session.userData, function(resultsRecord){
                         console.log(resultsRecord);
                     });
                     builder.Prompts.choice(session, "Do you want to upload a new picture?", "Yes|No",{ listStyle: 3 });
@@ -128,37 +115,46 @@ bot.dialog('help', function (session, args, next) {
 });
 
 function createTrashRecord(session, data, callback){
-    TrashRecord.create({ 
+    var apiUrl = process.env.WASTEDATA_API_ENDPOINT + "Records";
+    console.log("user ID, %s", data.userId);
+    var record_data = JSON.stringify({
         record_date: new Date(),
-        user: data.userId,
         trash_detected: data.usercaption["flagTrash"],
         trash_type_detected: data.usercaption["trashType"],
-        volume_detected:data.usercaption["volume"]
-    }, function (err) {
-        if (err) return handleErrorDB(err);
-        // saved!
-      });
-      return callback("records added");
+        volume_detected: 0,
+        userbotId: data.userId
+    });
+    console.log(record_data);
+    request.post({
+        headers: {'content-type' : 'application/json'},
+        url:apiUrl ,
+        body: record_data  
+        }, function(error, response, body){
+            console.log("after the call, %s",body);
+        });   
+      return callback("record added");
 };
 
 function createUser(session, callback){
-    var user = new User({ 
+    var apiUrl = process.env.WASTEDATA_API_ENDPOINT + "UserBots";
+    var user_data = JSON.stringify({
         user_name: session.message.address.user.name,
-        date_of_creation: new Date()
-    }, function (err) {
-        if (err) return handleErrorDB(err);
-        // saved!
-      });
-      return callback(user);
+        creation_date: new Date()
+    });
+    request.post({
+        headers: {'content-type' : 'application/json'},
+        url:apiUrl  ,
+        body:  user_data  
+        }, function(error, response, body){
+        console.log("body of the API request, %s",body);
+        session.userData.userId = body.id
+        });
+
+    return callback(user_data);
 }
 
 function checkCount(session, callback){
-    TrashRecord.count({
-        "user": session.userData.userId  
-    }, function(err, count){
-        if (err) return handleErrorDB(err);
-        return callback(count);
-    });
+    return callback("wait for me to plug to the right stuff.");
 }
 
 function hasImageAttachment(session) {

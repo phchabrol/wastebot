@@ -78,7 +78,7 @@ function extractCaption(body) {
         var analysis = {
             "flagTrash":"",
             "trashType":"",
-            "volume":""
+            "volume":0
         };
         
         for(i=0; i<body.Predictions.length;i++){
@@ -86,8 +86,8 @@ function extractCaption(body) {
                 if(body.Predictions[i].Tag=="trash"){analysis.flagTrash="Yes"};
                 if(body.Predictions[i].Tag=="recyclable"){analysis.trashType="recyclable"}; 
                 if(body.Predictions[i].Tag=="household"){analysis.trashType="household"}; 
-                if(body.Predictions[i].Tag=="50L"){analysis.volume="50L"};
-                if(body.Predictions[i].Tag=="380L"){analysis.volume="380L"};     
+                if(body.Predictions[i].Tag=="50L"){analysis.volume=50};
+                if(body.Predictions[i].Tag=="380L"){analysis.volume=380};     
             };
         }
         return analysis;

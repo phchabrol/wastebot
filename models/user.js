@@ -5,7 +5,9 @@ var Schema = mongoose.Schema;
 var UserSchema = new Schema(
   {
     user_name: {type: String, required: true, max: 100},
-    date_of_creation: {type: Date}
+    date_of_creation: {type: Date},
+    passwordHash: String,
+    passwordSalt: String
   }
 );
 

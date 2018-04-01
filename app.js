@@ -90,10 +90,8 @@ bot.dialog('imageanalysis', [
             session.send('Ok let\'s upload a new picture');
             session.replaceDialog("imageanalysis", { reprompt: true }); 
         } else{           
-            checkCount(session, function(results){
-                session.send("You recordeded %s picture since you started to use me.", results);
-                session.endDialog('Please come back anytime. I\'ll be here. Waiting for you.');
-
+            computeTotalVolume(session, function(results){
+                session.endDialog("Alright, please be aware that %s L of trash were produced since you started to use me.", results);
               });
               
         }
@@ -149,6 +147,23 @@ function createUser(session, callback){
 }
 
   
+function computeTotalVolume(session, callback){
+    var apiUrl = process.env.WASTEDATA_API_ENDPOINT + "UserBots/"+userId+"/records";
+    request.get({
+        headers: {'content-type' : 'application/json'},
+        url:apiUrl  ,
+        }, function(error, response, body){
+        var output = JSON.parse(body);
+        console.log(output)
+        var total= 0;
+        
+        for (i = 0; i < output.length; i++) {  //loop through the array
+            total += output[i].volume_detected;  //Do the math!
+        } 
+        console.log("total: %s", total)
+        return callback(total);
+        });
+}
 
 function checkCount(session, callback){
     return callback("wait for me to plug to the right stuff.");

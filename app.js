@@ -28,11 +28,6 @@ server.listen(process.env.port || process.env.PORT || 3978, function () {
    console.log('%s listening to %s', server.name, server.url); 
 });
 
-// Initialize the Botanalytics middleware
-var BotanalyticsMiddleware = require('botanalytics-microsoftbotframework-middleware').BotanalyticsMiddleware({
-    token: process.env.BOTANALYTICS_TOKEN
-  });
-  
 
 // Create chat connector for communicating with the Bot Framework Service
 var connector = new builder.ChatConnector({
@@ -62,6 +57,7 @@ var bot = new builder.UniversalBot(connector, [
         session.beginDialog('imageanalysis', session);
     }
 ]).set('storage', cosmosStorage); // Register Cosmos DB storage
+
 
 bot.dialog('greetings', [
     function (session) {
@@ -118,13 +114,7 @@ bot.dialog('help', function (session, args, next) {
     }
 });
 
-// Use the middleware
-bot.use(
-    {
-      receive: BotanalyticsMiddleware.receive,
-      send: BotanalyticsMiddleware.send
-    }
-  );
+
 
 function createTrashRecord(session, data, callback){
     var apiUrl = process.env.WASTEDATA_API_ENDPOINT + "Records";

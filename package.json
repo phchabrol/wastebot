@@ -23,6 +23,7 @@
     "dotenv": "^5.0.1",
     "mongoose": "^5.0.11",
     "needle": "^2.2.0",
+    "node-nlp": "^2.0.4",
     "restify": "^6.3.4"
   }
 }
